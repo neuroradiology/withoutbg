@@ -7,9 +7,78 @@ from typing import Any, Optional, Union
 import numpy as np
 import onnxruntime as ort  # type: ignore
 from huggingface_hub import hf_hub_download
-from PIL import Image
+from PIL import Image, ExifTags
 
 from .exceptions import ModelNotFoundError, WithoutBGError
+
+
+def _apply_exif_orientation(image: Image.Image) -> Image.Image:
+    """Apply EXIF orientation to rotate image correctly.
+    
+    Args:
+        image: PIL Image that may contain EXIF orientation data
+        
+    Returns:
+        PIL Image rotated according to EXIF orientation, or original if no orientation data
+    """
+    try:
+        # Get EXIF data
+        exif = image.getexif()
+        if not exif:
+            return image
+            
+        # Find orientation tag
+        orientation_key = None
+        for tag, name in ExifTags.TAGS.items():
+            if name == 'Orientation':
+                orientation_key = tag
+                break
+                
+        if orientation_key is None or orientation_key not in exif:
+            return image
+            
+        orientation = exif[orientation_key]
+        
+        # Apply rotation based on orientation value
+        # EXIF orientation values:
+        # 1 = Normal (no rotation)
+        # 2 = Mirrored horizontally
+        # 3 = Rotated 180°
+        # 4 = Mirrored vertically
+        # 5 = Mirrored horizontally and rotated 90° CCW
+        # 6 = Rotated 90° CW
+        # 7 = Mirrored horizontally and rotated 90° CW
+        # 8 = Rotated 90° CCW
+        
+        if orientation == 2:
+            # Horizontal mirror
+            image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        elif orientation == 3:
+            # 180° rotation
+            image = image.rotate(180, expand=True)
+        elif orientation == 4:
+            # Vertical mirror
+            image = image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        elif orientation == 5:
+            # Horizontal mirror + 90° CCW
+            image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            image = image.rotate(90, expand=True)
+        elif orientation == 6:
+            # 90° CW rotation
+            image = image.rotate(-90, expand=True)
+        elif orientation == 7:
+            # Horizontal mirror + 90° CW
+            image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            image = image.rotate(-90, expand=True)
+        elif orientation == 8:
+            # 90° CCW rotation
+            image = image.rotate(90, expand=True)
+            
+        return image
+        
+    except Exception:
+        # If any error occurs during EXIF processing, return original image
+        return image
 
 
 class OpenSourceModel:
@@ -611,6 +680,9 @@ class OpenSourceModel:
             image = input_image.copy()
         else:
             raise WithoutBGError(f"Unsupported input type: {type(input_image)}")
+
+        # Apply EXIF orientation correction right after loading
+        image = _apply_exif_orientation(image)
 
         # Convert to RGB if needed (model expects RGB only)
         if image.mode != "RGB":

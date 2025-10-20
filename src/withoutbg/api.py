@@ -9,6 +9,7 @@ import requests
 from PIL import Image
 
 from .exceptions import APIError
+from .models import _apply_exif_orientation
 
 
 class StudioAPI:
@@ -148,6 +149,9 @@ class StudioAPI:
                     original_image = img.copy()
             else:
                 raise APIError(f"Unsupported image type: {type(input_image)}")
+
+            # Apply EXIF orientation correction right after loading
+            original_image = _apply_exif_orientation(original_image)
 
             # Resize image for API transmission to optimize latency
             if progress_callback:
