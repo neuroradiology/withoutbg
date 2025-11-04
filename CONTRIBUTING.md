@@ -19,9 +19,17 @@ We welcome contributions to withoutbg! This document provides guidelines for con
 
 2. **Set Up Development Environment**
    ```bash
+   # Install uv (if you don't have it yet)
+   # Download from: https://astral.sh/uv
+   
+   # Install dependencies (using uv - recommended)
+   uv sync --extra dev
+   
+   # Or with pip (create venv first)
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -e ".[dev]"
+   
    pre-commit install
    ```
 
@@ -203,11 +211,15 @@ pytest -v
 git clone https://github.com/withoutbg/withoutbg.git
 cd withoutbg
 
-# Create virtual environment
+# Install uv (if you don't have it yet)
+# Download from: https://astral.sh/uv
+
+# Install package in development mode (using uv - recommended)
+uv sync --extra dev
+
+# Or with pip (create venv first)
 python -m venv venv
 source venv/bin/activate
-
-# Install package in development mode
 pip install -e ".[dev]"
 
 # Install pre-commit hooks

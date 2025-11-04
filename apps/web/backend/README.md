@@ -18,11 +18,13 @@ FastAPI-based REST API for AI-powered background removal.
 - Python 3.12
 - uv (recommended) or pip
 
+> **Don't have `uv` yet?** Download it at [astral.sh/uv](https://astral.sh/uv) - it's a fast, modern Python package installer.
+
 ### Setup
 
 ```bash
-# Install dependencies with uv
-uv pip install -r requirements.txt
+# Install dependencies with uv (recommended)
+uv sync
 
 # Or with pip
 pip install -r requirements.txt

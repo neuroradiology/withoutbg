@@ -76,13 +76,18 @@ The **core Python SDK** - independently versioned and published to PyPI.
 
 **Installation:**
 ```bash
-# From PyPI (end users)
+# From PyPI (end users) - using uv (recommended)
+uv add withoutbg
+
+# Or with pip
 pip install withoutbg
 
 # From source (development)
 cd packages/python
-pip install -e ".[dev]"
+uv sync --extra dev  # or: pip install -e ".[dev]"
 ```
+
+> **Don't have `uv` yet?** Download it at [astral.sh/uv](https://astral.sh/uv) - it's a fast, modern Python package installer.
 
 **Publishing:**
 ```bash

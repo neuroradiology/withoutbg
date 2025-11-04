@@ -28,15 +28,14 @@ open http://localhost:3000
 ```bash
 cd apps/web/backend
 
-# Install core package (from repository root)
-pip install -e ../../packages/python
-
-# Install backend dependencies
-pip install -e .
+# Install dependencies (using uv - recommended)
+uv sync
 
 # Run development server
 uvicorn app.main:app --reload
 ```
+
+> **Don't have `uv` yet?** Download it at [astral.sh/uv](https://astral.sh/uv) - it's a fast, modern Python package installer.
 
 ### Frontend
 

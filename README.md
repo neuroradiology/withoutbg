@@ -12,7 +12,10 @@ Remove backgrounds from images instantly with AI. Choose between local processin
 ### Python SDK
 
 ```bash
-# Install
+# Install (using uv - recommended)
+uv add withoutbg
+
+# Or with pip
 pip install withoutbg
 
 # Use in Python
@@ -23,6 +26,8 @@ result.save("output.png")
 # CLI
 withoutbg image.jpg
 ```
+
+> **Don't have `uv` yet?** Download it at [astral.sh/uv](https://astral.sh/uv) - it's a fast, modern Python package installer.
 
 ### Web Application
 
@@ -63,7 +68,7 @@ withoutbg/
 #### 📚 [Python SDK](packages/python/)
 Core library for background removal. Published to PyPI.
 
-- **Install**: `pip install withoutbg`
+- **Install**: `uv add withoutbg` (or `pip install withoutbg`)
 - **Use**: Python API + CLI
 - **Models**: Focus v1.0.0 (local), Cloud API
 
@@ -104,7 +109,10 @@ Plugins for popular creative tools.
 ```bash
 cd packages/python
 
-# Install in development mode
+# Install in development mode (using uv - recommended)
+uv sync --extra dev
+
+# Or with pip
 pip install -e ".[dev]"
 
 # Run tests
@@ -123,8 +131,7 @@ docker-compose -f apps/web/docker-compose.yml up
 
 # Or run components separately
 cd apps/web/backend
-pip install -e ../../packages/python
-pip install -e .
+uv sync
 uvicorn app.main:app --reload
 
 cd apps/web/frontend

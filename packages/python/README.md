@@ -8,8 +8,14 @@ AI-powered background removal with local and cloud options.
 ## Installation
 
 ```bash
+# Using uv (recommended)
+uv add withoutbg
+
+# Or with pip
 pip install withoutbg
 ```
+
+> **Don't have `uv` yet?** Download it at [astral.sh/uv](https://astral.sh/uv) - it's a fast, modern Python package installer.
 
 ## Quick Start
 
@@ -72,7 +78,10 @@ For complete documentation, see the [main project README](../../README.md).
 ## Development
 
 ```bash
-# Install in development mode
+# Install in development mode (using uv - recommended)
+uv sync --extra dev
+
+# Or with pip
 pip install -e ".[dev]"
 
 # Run tests

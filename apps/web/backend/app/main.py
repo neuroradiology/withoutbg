@@ -12,7 +12,7 @@ from fastapi.responses import Response, JSONResponse
 from PIL import Image
 import uvicorn
 
-# Import withoutbg package (install via: pip install -e ../../../packages/python)
+# Import withoutbg package (install via: uv sync or pip install -e ../../../packages/python)
 from withoutbg import remove_background, __version__
 from withoutbg.exceptions import WithoutBGError
 from withoutbg.api import StudioAPI
