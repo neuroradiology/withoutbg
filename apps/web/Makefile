@@ -1,6 +1,6 @@
 # Makefile for withoutbg web applications
 
-.PHONY: help install install-frontend install-backend dev dev-frontend dev-backend build build-frontend build-backend clean docker-build docker-up docker-down docker-logs docker-restart lint lint-frontend test-frontend docker-prod-build docker-prod-run docker-prod-push docker-prod-stop docker-prod-logs
+.PHONY: help install install-frontend install-backend dev dev-frontend dev-backend build build-frontend build-backend clean docker-build docker-up docker-down docker-logs docker-restart lint lint-frontend test-frontend docker-prod-build docker-prod-run docker-prod-push docker-prod-stop docker-prod-logs docker-release
 
 # Default target
 help:
@@ -36,7 +36,8 @@ help:
 	@echo "  docker-prod-run     Run production Docker container (port 80)"
 	@echo "  docker-prod-stop    Stop production Docker container"
 	@echo "  docker-prod-logs    View production container logs"
-	@echo "  docker-prod-push    Push production image to Docker Hub"
+	@echo "  docker-prod-push    Push production image to Docker Hub (VERSION required)"
+	@echo "  docker-release      Build, tag with SemVer, and push to Docker Hub"
 	@echo ""
 	@echo "Quality:"
 	@echo "  lint                Run all linters"
@@ -127,17 +128,23 @@ docker-clean:
 	docker system prune -f
 
 # Production Docker targets
-DOCKER_IMAGE_NAME ?= withoutbg
+DOCKER_IMAGE_NAME ?= app
 DOCKER_IMAGE_TAG ?= latest
 DOCKER_CONTAINER_NAME ?= withoutbg-prod
-DOCKER_HUB_USERNAME ?=
+DOCKER_HUB_USERNAME ?= withoutbg
+VERSION ?=
 
 docker-prod-build:
-	@echo "Building production Docker image..."
-	@echo "Image: $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
-	cd ../.. && docker build -f apps/web/Dockerfile -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .
-	@echo "✓ Production image built successfully!"
-	@echo "Run 'make docker-prod-run' to start the container"
+	@if [ "$(DOCKER_IMAGE_TAG)" = "latest" ]; then \
+		read -p "Enter image tag name: " tag; \
+		$(MAKE) docker-prod-build DOCKER_IMAGE_TAG=$$tag; \
+	else \
+		echo "Building production Docker image..."; \
+		echo "Image: $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"; \
+		cd ../.. && docker build -f apps/web/Dockerfile -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .; \
+		echo "✓ Production image built successfully!"; \
+		echo "Run 'make docker-prod-run DOCKER_IMAGE_TAG=$(DOCKER_IMAGE_TAG)' to start the container"; \
+	fi
 
 docker-prod-run:
 	@echo "Starting production Docker container..."
@@ -162,17 +169,65 @@ docker-prod-stop:
 
 docker-prod-push:
 	@echo "Pushing to Docker Hub..."
-	@if [ -z "$(DOCKER_HUB_USERNAME)" ]; then \
-		echo "Error: DOCKER_HUB_USERNAME not set"; \
-		echo "Usage: make docker-prod-push DOCKER_HUB_USERNAME=your-username"; \
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION not set"; \
+		echo "Usage: make docker-prod-push VERSION=1.0.0"; \
 		exit 1; \
 	fi
 	@echo "Tagging image for Docker Hub..."
-	docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
-	@echo "Pushing to $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)..."
-	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION)
+	docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest
+	@echo "Pushing version $(VERSION) and latest tags..."
+	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION)
+	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest
 	@echo "✓ Image pushed successfully!"
-	@echo "Pull with: docker pull $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
+	@echo ""
+	@echo "📦 Your image is now available at:"
+	@echo "   docker pull $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION)"
+	@echo "   docker pull $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest"
+	@echo ""
+	@echo "🚀 Users can run it with:"
+	@echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest"
+
+# Advanced: Build and push with semantic versioning
+# Usage: make docker-release VERSION=1.2.3
+docker-release:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION not set"; \
+		echo "Usage: make docker-release VERSION=1.2.3"; \
+		exit 1; \
+	fi
+	@echo "🚀 Building and releasing withoutbg/app:$(VERSION)..."
+	@echo ""
+	@# Extract major and minor versions
+	@MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
+	MINOR=$$(echo $(VERSION) | cut -d. -f1-2); \
+	echo "📦 Building production image..."; \
+	cd ../.. && docker build -f apps/web/Dockerfile -t $(DOCKER_IMAGE_NAME):$(VERSION) .; \
+	echo ""; \
+	echo "🏷️  Creating tags..."; \
+	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION); \
+	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MINOR; \
+	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR; \
+	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest; \
+	echo "   - $(VERSION) (full version)"; \
+	echo "   - $$MINOR (minor version)"; \
+	echo "   - $$MAJOR (major version)"; \
+	echo "   - latest"; \
+	echo ""; \
+	echo "☁️  Pushing to Docker Hub..."; \
+	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION); \
+	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MINOR; \
+	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR; \
+	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest; \
+	echo ""; \
+	echo "✅ Release $(VERSION) complete!"; \
+	echo ""; \
+	echo "📚 Users can now run:"; \
+	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest"; \
+	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION)"; \
+	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR"; \
+	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MINOR"
 
 docker-prod-logs:
 	@echo "Showing production container logs..."
