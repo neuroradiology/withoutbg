@@ -189,41 +189,48 @@ docker-prod-push:
 	@echo "🚀 Users can run it with:"
 	@echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest"
 
-# Advanced: Build and push with semantic versioning
+# Advanced: Build and push with semantic versioning + multi-platform support
 # Usage: make docker-release VERSION=1.2.3
+# Builds for both linux/amd64 (Intel/AMD) and linux/arm64 (Apple Silicon, ARM servers)
 docker-release:
 	@if [ -z "$(VERSION)" ]; then \
 		echo "Error: VERSION not set"; \
 		echo "Usage: make docker-release VERSION=1.2.3"; \
 		exit 1; \
 	fi
-	@echo "🚀 Building and releasing withoutbg/app:$(VERSION)..."
+	@echo "🚀 Building and releasing withoutbg/app:$(VERSION) (multi-platform)..."
 	@echo ""
 	@# Extract major and minor versions
 	@MAJOR=$$(echo $(VERSION) | cut -d. -f1); \
 	MINOR=$$(echo $(VERSION) | cut -d. -f1-2); \
-	echo "📦 Building production image..."; \
-	cd ../.. && docker build -f apps/web/Dockerfile -t $(DOCKER_IMAGE_NAME):$(VERSION) .; \
+	echo "🔧 Setting up buildx builder..."; \
+	docker buildx create --name withoutbg-builder --use 2>/dev/null || docker buildx use withoutbg-builder 2>/dev/null || docker buildx use default; \
 	echo ""; \
-	echo "🏷️  Creating tags..."; \
-	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION); \
-	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MINOR; \
-	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR; \
-	docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest; \
+	echo "📦 Building multi-platform image (amd64 + arm64)..."; \
+	echo "   This may take 10-20 minutes for the first build..."; \
+	cd ../.. && docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		-f apps/web/Dockerfile \
+		-t $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION) \
+		-t $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MINOR \
+		-t $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR \
+		-t $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest \
+		--push \
+		.; \
+	echo ""; \
+	echo "✅ Multi-platform release $(VERSION) complete!"; \
+	echo ""; \
+	echo "📦 Built for platforms:"; \
+	echo "   - linux/amd64 (Intel/AMD CPUs, most cloud servers)"; \
+	echo "   - linux/arm64 (Apple Silicon, AWS Graviton, Raspberry Pi)"; \
+	echo ""; \
+	echo "🏷️  Available tags:"; \
 	echo "   - $(VERSION) (full version)"; \
 	echo "   - $$MINOR (minor version)"; \
 	echo "   - $$MAJOR (major version)"; \
 	echo "   - latest"; \
 	echo ""; \
-	echo "☁️  Pushing to Docker Hub..."; \
-	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION); \
-	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MINOR; \
-	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR; \
-	docker push $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest; \
-	echo ""; \
-	echo "✅ Release $(VERSION) complete!"; \
-	echo ""; \
-	echo "📚 Users can now run:"; \
+	echo "📚 Users can now run on ANY architecture:"; \
 	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):latest"; \
 	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$(VERSION)"; \
 	echo "   docker run -p 80:80 $(DOCKER_HUB_USERNAME)/$(DOCKER_IMAGE_NAME):$$MAJOR"; \

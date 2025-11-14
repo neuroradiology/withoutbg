@@ -56,6 +56,7 @@ This Docker image includes:
   - Focus Matting model (27 MB)
   - Focus Refiner model (15 MB)
 - **Server**: Uvicorn serving both API and static files
+- **Multi-Platform**: Works on Intel/AMD (amd64) and ARM (arm64) architectures
 - **All Dependencies**: Zero configuration needed
 
 ---
@@ -246,6 +247,26 @@ docker run -d \
 ---
 
 ## 🆘 Troubleshooting
+
+### "exec format error" when starting container?
+
+This image is built for **multiple platforms** and should work on all architectures:
+- ✅ **linux/amd64** - Intel/AMD CPUs (most servers)
+- ✅ **linux/arm64** - Apple Silicon (M1/M2/M3), AWS Graviton
+
+If you see `exec format error`, Docker may have pulled the wrong architecture:
+
+```bash
+# Check what architecture Docker pulled
+docker image inspect withoutbg/app:latest | grep Architecture
+
+# Force pull for your platform
+docker pull --platform linux/amd64 withoutbg/app:latest  # Intel/AMD
+docker pull --platform linux/arm64 withoutbg/app:latest  # ARM/Apple Silicon
+
+# Then run normally
+docker run -p 80:80 withoutbg/app:latest
+```
 
 ### Container won't start?
 ```bash

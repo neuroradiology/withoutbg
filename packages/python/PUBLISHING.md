@@ -218,3 +218,4 @@ If you encounter issues, check:
 3. All tests pass: `make test`
 4. Code quality checks pass: `make quality`
 
+

@@ -48,6 +48,8 @@ docker run -p 80:80 withoutbg/app:latest
 open http://localhost
 ```
 
+✅ **Multi-platform support**: Works on Intel/AMD (amd64) and ARM (arm64) architectures
+
 ### Python SDK
 
 **[View Complete Python SDK Documentation →](https://withoutbg.com/documentation/integrations/python-sdk?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)**

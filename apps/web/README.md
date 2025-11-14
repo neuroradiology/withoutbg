@@ -10,6 +10,7 @@ Modern web interface for background removal with local AI processing.
 - **Frontend**: React 18 + Vite + Tailwind CSS
 - **Deployment**: Single Docker image (uvicorn serves both API and static files)
 - **Models**: Focus v1.0.0 (local processing)
+- **Multi-Platform**: Supports linux/amd64 (Intel/AMD) and linux/arm64 (Apple Silicon, ARM)
 
 **Model Results:**
 - **[See Focus Open Source Results →](https://withoutbg.com/resources/background-removal-results/model-focus-open-source?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=web-app-readme)**
@@ -158,12 +159,38 @@ The production `Dockerfile` uses a multi-stage build:
 
 No nginx or supervisord needed - uvicorn handles everything!
 
+## Troubleshooting
+
+### "exec format error" when running Docker image?
+
+This error means the Docker image architecture doesn't match your CPU. The published `withoutbg/app` images support multiple platforms, but you may need to explicitly specify:
+
+```bash
+# For Intel/AMD systems (most common)
+docker pull --platform linux/amd64 withoutbg/app:latest
+docker run --platform linux/amd64 -p 80:80 withoutbg/app:latest
+
+# For ARM systems (Apple Silicon, AWS Graviton)
+docker pull --platform linux/arm64 withoutbg/app:latest
+docker run --platform linux/arm64 -p 80:80 withoutbg/app:latest
+```
+
+**For developers**: When publishing images, use the multi-platform build:
+
+```bash
+cd apps/web
+make docker-release VERSION=1.0.1
+```
+
+See [EXEC_FORMAT_ERROR_FIX.md](./EXEC_FORMAT_ERROR_FIX.md) for detailed troubleshooting steps.
+
 ## Additional Resources
 
 - **[Dockerized Web App Documentation](https://withoutbg.com/documentation/integrations/dockerized-web-app?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=web-app-readme)** - Complete deployment guide
 - **[Python SDK Documentation](https://withoutbg.com/documentation/integrations/python-sdk?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=web-app-readme)** - Backend API reference
 - **[Focus Model Results](https://withoutbg.com/resources/background-removal-results/model-focus-open-source?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=web-app-readme)** - Example outputs
 - **[Pro API Results](https://withoutbg.com/resources/background-removal-results/model-pro-api?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=web-app-readme)** - Example outputs
+- **[Multi-Platform Docker Guide](./MULTI_PLATFORM_DOCKER.md)** - Technical details on cross-platform builds
 
 
 
