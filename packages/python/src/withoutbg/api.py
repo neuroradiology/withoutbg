@@ -3,7 +3,7 @@
 import base64
 import io
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import requests
 from PIL import Image
@@ -116,13 +116,16 @@ class ProAPI:
         return rgba_image
 
     def remove_background(
-        self, input_image: Union[str, Path, Image.Image, bytes], progress_callback: Optional[callable] = None, **kwargs: Any
+        self,
+        input_image: Union[str, Path, Image.Image, bytes],
+        progress_callback: Optional[Callable] = None,
+        **kwargs: Any,
     ) -> Image.Image:
         """Remove background using withoutBG Pro API.
 
         Args:
             input_image: Input image
-            progress_callback: Optional callback function for progress updates (progress)
+            progress_callback: Optional callback for progress updates
             **kwargs: Additional API parameters
 
         Returns:
@@ -137,7 +140,7 @@ class ProAPI:
         try:
             if progress_callback:
                 progress_callback(0.1)
-            
+
             # Store original image for local alpha application
             if isinstance(input_image, (str, Path)):
                 with Image.open(input_image) as img:
@@ -219,10 +222,10 @@ class ProAPI:
             if progress_callback:
                 progress_callback(0.9)
             result = self._apply_alpha_channel(original_image, alpha_image)
-            
+
             if progress_callback:
                 progress_callback(1.0)
-            
+
             return result
 
         except requests.RequestException as e:

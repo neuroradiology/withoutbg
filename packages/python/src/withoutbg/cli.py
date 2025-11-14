@@ -27,7 +27,9 @@ from .exceptions import WithoutBGError
     help="API key for withoutBG Pro service (or set WITHOUTBG_API_KEY env var)",
 )
 @click.option(
-    "--use-api", is_flag=True, help="Use withoutBG Pro instead of local Open Source model"
+    "--use-api",
+    is_flag=True,
+    help="Use withoutBG Pro instead of local Open Source model",
 )
 @click.option(
     "--model",
@@ -101,7 +103,9 @@ def main(
                 click.echo("Loading models...")
 
         # Initialize model once (key optimization!)
+        bg_model: WithoutBG
         if using_api:
+            assert api_key is not None  # Already checked above
             bg_model = WithoutBG.api(api_key)
         else:
             bg_model = WithoutBG.opensource()
@@ -111,13 +115,9 @@ def main(
 
         # Process images
         if batch or input_path.is_dir():
-            _process_batch(
-                bg_model, input_path, output_dir, format, quality, verbose
-            )
+            _process_batch(bg_model, input_path, output_dir, format, quality, verbose)
         else:
-            _process_single(
-                bg_model, input_path, output, format, quality, verbose
-            )
+            _process_single(bg_model, input_path, output, format, quality, verbose)
 
         if verbose:
             api_msg = ""
@@ -158,16 +158,16 @@ def _process_single(
     # Remove background with progress tracking
     bar: ProgressBar
     with click.progressbar(length=100, label="Removing background") as bar:
+
         def progress_callback(progress: float) -> None:
             """Update progress bar with progress information."""
             # Update to the target progress position
             target_pos = int(progress * 100)
             if target_pos > bar.pos:
                 bar.update(target_pos - bar.pos)
-        
+
         result = model.remove_background(
-            input_path,
-            progress_callback=progress_callback
+            input_path, progress_callback=progress_callback
         )
 
     # Save result

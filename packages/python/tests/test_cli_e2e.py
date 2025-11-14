@@ -25,7 +25,9 @@ class TestCLIE2E:
         return output_dir
 
     @pytest.mark.real_processing
-    def test_e2e_single_image_open_source_model(self, real_test_image_path, temp_output_dir):
+    def test_e2e_single_image_open_source_model(
+        self, real_test_image_path, temp_output_dir
+    ):
         """Test end-to-end processing of single image with Snap model."""
         if not real_test_image_path.exists():
             pytest.skip("Real test image not available")

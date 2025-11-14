@@ -1,6 +1,6 @@
 # Makefile for withoutbg Python package
 
-.PHONY: help install dev-install test test-unit test-integration test-performance test-coverage lint format type-check clean build docs version-show version-patch version-minor version-major
+.PHONY: help install dev-install test test-unit test-integration test-performance test-coverage lint format type-check clean build docs version-show version-patch version-minor version-major publish publish-test publish-check
 
 # Default target
 help:
@@ -33,6 +33,9 @@ help:
 	@echo "  version-patch    Increment patch version (0.1.0 -> 0.1.1)"
 	@echo "  version-minor    Increment minor version (0.1.0 -> 0.2.0)"
 	@echo "  version-major    Increment major version (0.1.0 -> 1.0.0)"
+	@echo "  publish-check    Check package before publishing (quality + build)"
+	@echo "  publish-test     Publish to TestPyPI"
+	@echo "  publish          Publish to PyPI (production)"
 	@echo "  dev              Quick development setup and checks"
 	@echo "  ci               Simulate CI pipeline"
 
@@ -167,4 +170,43 @@ release-minor: version-minor
 
 release-major: version-major
 	@echo "Major release created: $$(uv run hatch version)"
+
+# Publishing targets (using modern tools)
+publish-check: quality build
+	@echo "✓ Pre-publish checks passed!"
+	@echo "📦 Package built and ready for publishing"
+	@echo ""
+	@echo "Contents of dist/:"
+	@ls -lh dist/
+	@echo ""
+	@echo "To publish to TestPyPI: make publish-test"
+	@echo "To publish to PyPI:     make publish"
+
+publish-test: publish-check
+	@echo "📤 Publishing to TestPyPI..."
+	@echo ""
+	@echo "⚠️  You'll need to authenticate with TestPyPI"
+	@echo "Set up your API token at: https://test.pypi.org/manage/account/token/"
+	@echo ""
+	uv publish --publish-url https://test.pypi.org/legacy/
+	@echo ""
+	@echo "✓ Published to TestPyPI!"
+	@echo "Test installation with:"
+	@echo "  pip install --index-url https://test.pypi.org/simple/ withoutbg"
+
+publish: publish-check
+	@echo "📤 Publishing to PyPI..."
+	@echo ""
+	@echo "⚠️  PRODUCTION RELEASE - Are you sure? (Ctrl+C to cancel)"
+	@echo "Version: $$(uv run hatch version)"
+	@sleep 3
+	@echo ""
+	@echo "⚠️  You'll need to authenticate with PyPI"
+	@echo "Set up your API token at: https://pypi.org/manage/account/token/"
+	@echo ""
+	uv publish
+	@echo ""
+	@echo "✓ Successfully published to PyPI!"
+	@echo "Install with: pip install withoutbg"
+	@echo "View at: https://pypi.org/project/withoutbg/"
 

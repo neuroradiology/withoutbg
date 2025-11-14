@@ -3,43 +3,44 @@
 import io
 import os
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import onnxruntime as ort  # type: ignore
 from huggingface_hub import hf_hub_download
-from PIL import Image, ExifTags
+from PIL import ExifTags, Image
 
 from .exceptions import ModelNotFoundError, WithoutBGError
 
 
 def _apply_exif_orientation(image: Image.Image) -> Image.Image:
     """Apply EXIF orientation to rotate image correctly.
-    
+
     Args:
         image: PIL Image that may contain EXIF orientation data
-        
+
     Returns:
-        PIL Image rotated according to EXIF orientation, or original if no orientation data
+        PIL Image rotated according to EXIF orientation, or original if
+        no orientation data
     """
     try:
         # Get EXIF data
         exif = image.getexif()
         if not exif:
             return image
-            
+
         # Find orientation tag
         orientation_key = None
         for tag, name in ExifTags.TAGS.items():
-            if name == 'Orientation':
+            if name == "Orientation":
                 orientation_key = tag
                 break
-                
+
         if orientation_key is None or orientation_key not in exif:
             return image
-            
+
         orientation = exif[orientation_key]
-        
+
         # Apply rotation based on orientation value
         # EXIF orientation values:
         # 1 = Normal (no rotation)
@@ -50,7 +51,7 @@ def _apply_exif_orientation(image: Image.Image) -> Image.Image:
         # 6 = Rotated 90° CW
         # 7 = Mirrored horizontally and rotated 90° CW
         # 8 = Rotated 90° CCW
-        
+
         if orientation == 2:
             # Horizontal mirror
             image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
@@ -74,9 +75,9 @@ def _apply_exif_orientation(image: Image.Image) -> Image.Image:
         elif orientation == 8:
             # 90° CCW rotation
             image = image.rotate(90, expand=True)
-            
+
         return image
-        
+
     except Exception:
         # If any error occurs during EXIF processing, return original image
         return image
@@ -97,14 +98,15 @@ class OpenSourceModel:
         Args:
             depth_model_path: Path to Depth Anything V2 ONNX model. If None,
                 downloads from HF.
-            isnet_model_path: Path to ISNet segmentation ONNX model. If None, downloads from HF.
-            matting_model_path: Path to Matting ONNX model. If None, downloads from HF.
-            refiner_model_path: Path to Refiner ONNX model. If None, downloads from HF.
+            isnet_model_path: Path to ISNet segmentation ONNX model. If
+                None, downloads from HF.
+            matting_model_path: Path to Matting ONNX model. If None,
+                downloads from HF.
+            refiner_model_path: Path to Refiner ONNX model. If None,
+                downloads from HF.
         """
         self.depth_model_path = depth_model_path or self._get_default_depth_model_path()
-        self.isnet_model_path = (
-            isnet_model_path or self._get_default_isnet_model_path()
-        )
+        self.isnet_model_path = isnet_model_path or self._get_default_isnet_model_path()
         self.matting_model_path = (
             matting_model_path or self._get_default_matting_model_path()
         )
@@ -112,17 +114,16 @@ class OpenSourceModel:
             refiner_model_path or self._get_default_refiner_model_path()
         )
 
-
-        self.depth_session = None
-        self.isnet_session = None
-        self.matting_session = None
-        self.refiner_session = None
+        self.depth_session: Optional[ort.InferenceSession] = None
+        self.isnet_session: Optional[ort.InferenceSession] = None
+        self.matting_session: Optional[ort.InferenceSession] = None
+        self.refiner_session: Optional[ort.InferenceSession] = None
 
         self._load_models()
 
     def _get_default_depth_model_path(self) -> Path:
-        """Get path to Depth Anything V2 model from environment variable or Hugging Face.
-        
+        """Get path to Depth Anything V2 model from env variable or HF.
+
         Checks WITHOUTBG_DEPTH_MODEL_PATH environment variable first.
         If not set, downloads from Hugging Face.
         """
@@ -133,15 +134,16 @@ class OpenSourceModel:
                 return path
             else:
                 raise ModelNotFoundError(
-                    f"Depth model not found at path specified in WITHOUTBG_DEPTH_MODEL_PATH: {env_path}"
+                    f"Depth model not found at path specified in "
+                    f"WITHOUTBG_DEPTH_MODEL_PATH: {env_path}"
                 )
         return self._download_from_hf(
             "depth_anything_v2_vits_slim.onnx", "Depth Anything V2 model"
         )
 
     def _get_default_isnet_model_path(self) -> Path:
-        """Get path to ISNet segmentation model from environment variable or Hugging Face.
-        
+        """Get path to ISNet segmentation model from env variable or HF.
+
         Checks WITHOUTBG_ISNET_MODEL_PATH environment variable first.
         If not set, downloads from Hugging Face.
         """
@@ -152,13 +154,14 @@ class OpenSourceModel:
                 return path
             else:
                 raise ModelNotFoundError(
-                    f"ISNet model not found at path specified in WITHOUTBG_ISNET_MODEL_PATH: {env_path}"
+                    f"ISNet model not found at path specified in "
+                    f"WITHOUTBG_ISNET_MODEL_PATH: {env_path}"
                 )
         return self._download_from_hf("isnet.onnx", "ISNet segmentation model")
 
     def _get_default_matting_model_path(self) -> Path:
         """Get path to Matting model from environment variable or Hugging Face.
-        
+
         Checks WITHOUTBG_MATTING_MODEL_PATH environment variable first.
         If not set, downloads from Hugging Face.
         """
@@ -169,13 +172,14 @@ class OpenSourceModel:
                 return path
             else:
                 raise ModelNotFoundError(
-                    f"Matting model not found at path specified in WITHOUTBG_MATTING_MODEL_PATH: {env_path}"
+                    f"Matting model not found at path specified in "
+                    f"WITHOUTBG_MATTING_MODEL_PATH: {env_path}"
                 )
         return self._download_from_hf("focus_matting_1.0.0.onnx", "Focus matting model")
 
     def _get_default_refiner_model_path(self) -> Path:
         """Get path to Refiner model from environment variable or Hugging Face.
-        
+
         Checks WITHOUTBG_REFINER_MODEL_PATH environment variable first.
         If not set, downloads from Hugging Face.
         """
@@ -186,7 +190,8 @@ class OpenSourceModel:
                 return path
             else:
                 raise ModelNotFoundError(
-                    f"Refiner model not found at path specified in WITHOUTBG_REFINER_MODEL_PATH: {env_path}"
+                    f"Refiner model not found at path specified in "
+                    f"WITHOUTBG_REFINER_MODEL_PATH: {env_path}"
                 )
         return self._download_from_hf("focus_refiner_1.0.0.onnx", "Focus refiner model")
 
@@ -321,25 +326,25 @@ class OpenSourceModel:
 
     def transform_for_isnet(self, im: np.ndarray) -> np.ndarray:
         """Transform image for ISNet model preprocessing.
-        
+
         Args:
             im: Input image as numpy array (H, W, C) with values in [0, 255]
-            
+
         Returns:
             Preprocessed image ready for ISNet model inference
         """
         # Convert numpy array to PIL Image for resizing
         pil_image = Image.fromarray(im.astype(np.uint8))
-        
+
         # Resize to 1024x1024 using PIL
         pil_image = pil_image.resize((1024, 1024), Image.Resampling.LANCZOS)
-        
+
         # Convert back to numpy array
         im = np.array(pil_image, dtype=np.float32)
 
         # Normalize to [0, 1]
         im = im / 255.0
-        
+
         # Apply ISNet-specific normalization
         mean = np.array([0.5, 0.5, 0.5])
         std = np.array([1.0, 1.0, 1.0])
@@ -359,37 +364,38 @@ class OpenSourceModel:
     def _isnet_stage(self, image: Image.Image) -> np.ndarray:
         """
         ISNet segmentation stage for background removal.
-        
+
         Parameters:
         - image (PIL.Image.Image): The input RGB PIL Image.
-        
+
         Returns:
         - np.ndarray: Alpha mask from ISNet segmentation (H, W) with values in [0, 1].
         """
         # Convert PIL image to numpy array
         img_array = np.array(image)
-        
+
         # Transform for ISNet
         processed_img = self.transform_for_isnet(img_array)
-        
+
         # Run inference using ISNet
-        assert self.isnet_session is not None, "ISNet model not loaded"
-        
+        if self.isnet_session is None:
+            raise ModelNotFoundError("ISNet model not loaded")
+
         # Get the actual input name from the model
         input_name = self.isnet_session.get_inputs()[0].name
-        ort_inputs = {input_name: processed_img}  # type: ignore[unreachable]
+        ort_inputs = {input_name: processed_img}
         ort_outs = self.isnet_session.run(None, ort_inputs)
         alpha_output = ort_outs[0]
-        
+
         # Process output: remove batch dimension
         alpha_output = alpha_output.squeeze(0)
         if len(alpha_output.shape) == 3:
             alpha_output = alpha_output[0]
-        
+
         # Keep values in [0, 1] range for further processing
-        alpha_output = np.clip(alpha_output, 0, 1).astype(np.float32)
-        
-        return alpha_output
+        result: np.ndarray = np.clip(alpha_output, 0, 1).astype(np.float32)
+
+        return result
 
     def _preprocess_for_depth(
         self,
@@ -468,8 +474,9 @@ class OpenSourceModel:
         )
 
         # Inference using ONNX
-        assert self.depth_session is not None, "Depth model not loaded"
-        ort_inputs = {"image": img_array}  # type: ignore[unreachable]
+        if self.depth_session is None:
+            raise ModelNotFoundError("Depth model not loaded")
+        ort_inputs = {"image": img_array}
         ort_outs = self.depth_session.run(None, ort_inputs)
         depth = ort_outs[0]
 
@@ -487,7 +494,8 @@ class OpenSourceModel:
         self, rgb_image: Image.Image, depth_image: Image.Image, isnet_mask: np.ndarray
     ) -> Image.Image:
         """
-        Stage 2: Matting using RGBD + ISNet mask input (RGB + inverse depth + ISNet mask concatenated).
+        Stage 2: Matting using RGBD + ISNet mask input
+        (RGB + inverse depth + ISNet mask concatenated).
 
         Parameters:
         - rgb_image (PIL.Image.Image): The original RGB image.
@@ -500,10 +508,16 @@ class OpenSourceModel:
         # Resize all inputs to 256x256 for matting model
         rgb_resized = rgb_image.resize((256, 256), Image.Resampling.LANCZOS)
         depth_resized = depth_image.resize((256, 256), Image.Resampling.LANCZOS)
-        
+
         # Resize ISNet mask to 256x256 using PIL
-        isnet_mask_pil = Image.fromarray((isnet_mask * 255).astype(np.uint8), mode='L')
-        isnet_mask_resized = np.array(isnet_mask_pil.resize((256, 256), Image.Resampling.LANCZOS), dtype=np.float32) / 255.0
+        isnet_mask_pil = Image.fromarray((isnet_mask * 255).astype(np.uint8), mode="L")
+        isnet_mask_resized = (
+            np.array(
+                isnet_mask_pil.resize((256, 256), Image.Resampling.LANCZOS),
+                dtype=np.float32,
+            )
+            / 255.0
+        )
 
         # Convert to numpy arrays and normalize to [0, 1]
         rgb_array = np.array(rgb_resized, dtype=np.float32) / 255.0
@@ -529,11 +543,12 @@ class OpenSourceModel:
         rgbd_mask_tensor = np.ascontiguousarray(rgbd_mask_tensor, dtype=np.float32)
 
         # Run inference through matting model
-        assert self.matting_session is not None, "Matting model not loaded"
-        
+        if self.matting_session is None:
+            raise ModelNotFoundError("Matting model not loaded")
+
         # Get the actual input name from the model
         input_name = self.matting_session.get_inputs()[0].name
-        ort_inputs = {input_name: rgbd_mask_tensor}  # type: ignore[unreachable]
+        ort_inputs = {input_name: rgbd_mask_tensor}
         ort_outs = self.matting_session.run(None, ort_inputs)
         alpha_output = ort_outs[0]
 
@@ -550,20 +565,22 @@ class OpenSourceModel:
 
         return alpha_image
 
-    def _calculate_refiner_size(self, original_size: tuple[int, int]) -> tuple[int, int]:
+    def _calculate_refiner_size(
+        self, original_size: tuple[int, int]
+    ) -> tuple[int, int]:
         """Calculate optimal size for refiner model (max 800px on bigger side)."""
         width, height = original_size
         max_size = 800
-        
+
         # If both dimensions are already <= 800, no resizing needed
         if width <= max_size and height <= max_size:
             return original_size
-        
+
         # Calculate scale factor to make the bigger side = 800
         scale = max_size / max(width, height)
         new_width = int(width * scale)
         new_height = int(height * scale)
-        
+
         return (new_width, new_height)
 
     def _refiner_stage(
@@ -571,7 +588,7 @@ class OpenSourceModel:
     ) -> Image.Image:
         """
         Stage 3: Refine alpha channel using RGB + alpha concatenated input.
-        
+
         Optimizes performance by resizing large images to max 800px on the bigger side
         for inference, then upscaling the result back to original resolution.
 
@@ -584,10 +601,10 @@ class OpenSourceModel:
         """
         # Get original image size
         original_size = rgb_image.size
-        
+
         # Calculate optimal size for refiner model (max 800px on bigger side)
         refiner_size = self._calculate_refiner_size(original_size)
-        
+
         # Resize RGB image for refiner model if needed
         if refiner_size != original_size:
             rgb_resized = rgb_image.resize(refiner_size, Image.Resampling.LANCZOS)
@@ -622,11 +639,12 @@ class OpenSourceModel:
         input_tensor = np.ascontiguousarray(input_tensor, dtype=np.float32)
 
         # Run inference through refiner model
-        assert self.refiner_session is not None, "Refiner model not loaded"
-        
+        if self.refiner_session is None:
+            raise ModelNotFoundError("Refiner model not loaded")
+
         # Get the actual input name from the model
         input_name = self.refiner_session.get_inputs()[0].name
-        ort_inputs = {input_name: input_tensor}  # type: ignore[unreachable]
+        ort_inputs = {input_name: input_tensor}
         ort_outs = self.refiner_session.run(None, ort_inputs)
         alpha_output = ort_outs[0]
 
@@ -640,14 +658,18 @@ class OpenSourceModel:
 
         # Convert to PIL Image
         refined_alpha = Image.fromarray(alpha_output, mode="L")
-        
+
         # Resize refined alpha back to original resolution if it was downscaled
         if refiner_size != original_size:
-            refined_alpha = refined_alpha.resize(original_size, Image.Resampling.LANCZOS)
+            refined_alpha = refined_alpha.resize(
+                original_size, Image.Resampling.LANCZOS
+            )
 
         return refined_alpha
 
-    def estimate_alpha(self, image: Image.Image, progress_callback: Optional[callable] = None) -> Image.Image:
+    def estimate_alpha(
+        self, image: Image.Image, progress_callback: Optional[Callable] = None
+    ) -> Image.Image:
         """
         Full 4-stage pipeline: Depth Anything V2 -> ISNet -> Matting -> Refiner.
 
@@ -660,7 +682,7 @@ class OpenSourceModel:
         """
         if progress_callback:
             progress_callback(0.0)
-        
+
         # Stage 1: Depth estimation
         if progress_callback:
             progress_callback(0.2)
@@ -689,29 +711,32 @@ class OpenSourceModel:
     def estimate_alpha_isnet(self, image: Image.Image) -> Image.Image:
         """
         Single-stage ISNet-based alpha estimation.
-        
+
         Parameters:
         - image (PIL.Image.Image): Input RGB image.
-        
+
         Returns:
         - PIL.Image.Image: Alpha channel from ISNet segmentation.
         """
         isnet_mask = self._isnet_stage(image)
-        
+
         # Convert numpy array to PIL Image
         alpha_output = np.clip(isnet_mask * 255.0, 0, 255).astype(np.uint8)
         alpha_image = Image.fromarray(alpha_output, mode="L")
-        
+
         return alpha_image
 
     def remove_background(
-        self, input_image: Union[str, Path, Image.Image, bytes], progress_callback: Optional[callable] = None, **kwargs: Any
+        self,
+        input_image: Union[str, Path, Image.Image, bytes],
+        progress_callback: Optional[Callable] = None,
+        **kwargs: Any,
     ) -> Image.Image:
         """Remove background from image using local Open Source model.
 
         Args:
             input_image: Input image
-            progress_callback: Optional callback function for progress updates (progress)
+            progress_callback: Optional callback for progress updates
             **kwargs: Additional arguments (unused for Open Source model)
 
         Returns:
@@ -740,7 +765,9 @@ class OpenSourceModel:
 
         try:
             # Run 3-stage pipeline to get final alpha channel
-            alpha_channel = self.estimate_alpha(image, progress_callback=progress_callback)
+            alpha_channel = self.estimate_alpha(
+                image, progress_callback=progress_callback
+            )
 
             # Resize alpha to original image size
             alpha_resized = alpha_channel.resize(

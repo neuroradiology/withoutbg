@@ -1,7 +1,7 @@
 # Root Makefile for withoutbg monorepo
 # This orchestrates commands across the entire project
 
-.PHONY: help install install-all install-python install-web test test-all test-python clean clean-all build build-all docker-up docker-down quality
+.PHONY: help install install-all install-python install-web test test-all test-python clean clean-all build build-all docker-up docker-down quality publish publish-test publish-check
 
 # Default target
 help:
@@ -44,6 +44,11 @@ help:
 	@echo "  clean-all           Clean all build artifacts"
 	@echo "  clean-python        Clean Python artifacts"
 	@echo "  clean-web           Clean web artifacts"
+	@echo ""
+	@echo "📦 Publishing (Python Package):"
+	@echo "  publish-check       Check package before publishing"
+	@echo "  publish-test        Publish to TestPyPI"
+	@echo "  publish             Publish to PyPI (production)"
 	@echo ""
 	@echo "📋 Component-Specific Commands:"
 	@echo "  make -C packages/python help    Show Python package commands"
@@ -200,6 +205,22 @@ version-minor:
 version-major:
 	@echo "⬆️  Bumping major version..."
 	$(MAKE) -C packages/python version-major
+
+# ============================================================================
+# Publishing Commands (Python Package)
+# ============================================================================
+
+publish-check:
+	@echo "🔍 Checking package before publishing..."
+	$(MAKE) -C packages/python publish-check
+
+publish-test:
+	@echo "📤 Publishing to TestPyPI..."
+	$(MAKE) -C packages/python publish-test
+
+publish:
+	@echo "📤 Publishing to PyPI (production)..."
+	$(MAKE) -C packages/python publish
 
 # ============================================================================
 # Quick Start Commands

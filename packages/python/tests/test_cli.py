@@ -174,7 +174,9 @@ class TestCLIIntegration:
         return images_dir
 
     @patch("src.withoutbg.cli.remove_background")
-    def test_single_image_processing_open_source_model(self, mock_remove_bg, test_image_file):
+    def test_single_image_processing_open_source_model(
+        self, mock_remove_bg, test_image_file
+    ):
         """Test processing single image with local opensource model."""
         # Mock successful processing
         result_image = Image.new("RGBA", (256, 256), color=(255, 0, 0, 128))
