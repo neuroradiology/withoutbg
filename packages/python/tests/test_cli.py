@@ -298,18 +298,18 @@ class TestCLIIntegration:
                 [str(test_image_file), "--output", str(output_path), "--format", fmt],
             )
 
-            assert result.exit_code == 0, (
-                f"Format {fmt} failed with output: {result.output}"
-            )
+            assert (
+                result.exit_code == 0
+            ), f"Format {fmt} failed with output: {result.output}"
             assert output_path.exists()
 
             # Verify the file was saved with correct PIL format
             saved_image = Image.open(output_path)
             expected_pil_formats = {"png": "PNG", "jpg": "JPEG", "webp": "WEBP"}
             expected_format = expected_pil_formats[fmt]
-            assert saved_image.format == expected_format, (
-                f"Expected {expected_format}, got {saved_image.format}"
-            )
+            assert (
+                saved_image.format == expected_format
+            ), f"Expected {expected_format}, got {saved_image.format}"
 
     @patch("src.withoutbg.cli.WithoutBG")
     def test_jpeg_quality_setting(
@@ -334,9 +334,9 @@ class TestCLIIntegration:
             ],
         )
 
-        assert result.exit_code == 0, (
-            f"JPEG quality test failed with output: {result.output}"
-        )
+        assert (
+            result.exit_code == 0
+        ), f"JPEG quality test failed with output: {result.output}"
         assert output_path.exists()
 
     @patch("src.withoutbg.cli.WithoutBG")
@@ -598,9 +598,9 @@ class TestCLIEdgeCases:
             main, [str(image_path), "--output", str(output_path), "--format", "jpg"]
         )
 
-        assert result.exit_code == 0, (
-            f"RGBA to JPG conversion failed with output: {result.output}"
-        )
+        assert (
+            result.exit_code == 0
+        ), f"RGBA to JPG conversion failed with output: {result.output}"
         assert output_path.exists()
 
         # Verify the saved image is RGB (not RGBA)
@@ -739,9 +739,9 @@ class TestCLIPerformance:
 
         # Performance assertion (should process 10 images in reasonable time)
         # This is quite lenient since we're mocking the actual processing
-        assert processing_time < 10.0, (
-            f"Batch processing took {processing_time:.2f}s, expected < 10s"
-        )
+        assert (
+            processing_time < 10.0
+        ), f"Batch processing took {processing_time:.2f}s, expected < 10s"
 
     @pytest.mark.performance
     @patch("src.withoutbg.cli.WithoutBG")
