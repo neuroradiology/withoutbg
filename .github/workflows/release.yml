@@ -26,9 +26,11 @@ jobs:
         pip install build twine
         
     - name: Build package
+      working-directory: packages/python
       run: python -m build
       
     - name: Check package
+      working-directory: packages/python
       run: twine check dist/*
       
     - name: Create GitHub Release
@@ -44,4 +46,5 @@ jobs:
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
+        packages-dir: packages/python/dist/
         repository-url: https://upload.pypi.org/legacy/

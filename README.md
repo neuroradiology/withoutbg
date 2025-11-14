@@ -36,6 +36,32 @@ Need fastest processing? → withoutBG Pro (optimized infrastructure)
 
 ## 🚀 Quick Start
 
+### Docker (Web Interface)
+
+**[View Complete Dockerized Web App Documentation →](https://withoutbg.com/documentation/integrations/dockerized-web-app?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)**
+
+```bash
+# Clone and start the web application
+git clone https://github.com/withoutbg/withoutbg.git
+cd withoutbg
+
+# Development mode with hot-reload
+docker compose -f apps/web/docker-compose.yml up
+
+# Open in browser
+open http://localhost:3000
+```
+
+Or run production image:
+```bash
+# Build and run production image
+docker build -f apps/web/Dockerfile -t withoutbg:latest .
+docker run -p 80:80 withoutbg:latest
+
+# Open in browser
+open http://localhost
+```
+
 ### Python SDK
 
 **[View Complete Python SDK Documentation →](https://withoutbg.com/documentation/integrations/python-sdk?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)**
@@ -110,20 +136,6 @@ withoutbg photo.jpg --verbose
 ![Example 3](/sample-results/open-source-focus/example3.png)
 ![Example 6](/sample-results/open-source-focus/example6.png)
 ![Example 4](/sample-results/open-source-focus/example4.png)
-
-### Web Application
-
-**[View Dockerized Web App Documentation →](https://withoutbg.com/documentation/integrations/dockerized-web-app?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)**
-
-```bash
-# Clone and run with Docker
-git clone https://github.com/withoutbg/withoutbg.git
-cd withoutbg
-docker-compose -f apps/web/docker-compose.yml up
-
-# Open browser
-open http://localhost:3000
-```
 
 ## 📦 Repository Structure
 
