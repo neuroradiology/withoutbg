@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.0](https://github.com/withoutbg/withoutbg/compare/v1.0.0...v1.1.0) (2025-12-02)
+
+
+### ✨ Features
+
+* add automated release system ([165c352](https://github.com/withoutbg/withoutbg/commit/165c3526a402e4d3fce356d58326316a5fe9ceca))
+* add intelligent version bump to manual Docker release workflow ([6fca571](https://github.com/withoutbg/withoutbg/commit/6fca57132637827c2a364dc2c78a269fe7bd803a))
+
 ## 1.0.0 (2025-12-02)
 
 
