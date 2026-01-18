@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 1.0.0 (2026-01-18)
+
+
+### ✨ Features
+
+* add automated release system ([b7bc231](https://github.com/neuroradiology/withoutbg/commit/b7bc231cdc77e7d6cc85f944eeb0cffa5bcfbc52))
+* add automated release system ([165c352](https://github.com/neuroradiology/withoutbg/commit/165c3526a402e4d3fce356d58326316a5fe9ceca))
+* Add Docker release workflow for multi-platform image builds and S3 model downloads ([48f12ba](https://github.com/neuroradiology/withoutbg/commit/48f12bac6841599fa744fee9cad054565333a18b))
+* add intelligent version bump to manual Docker release workflow ([6fca571](https://github.com/neuroradiology/withoutbg/commit/6fca57132637827c2a364dc2c78a269fe7bd803a))
+* Implement automated release system with semantic versioning and Docker CI/CD setup ([94d6976](https://github.com/neuroradiology/withoutbg/commit/94d69760bf065d4be099cebb8a11150223aa2139))
+* Update links to withoutbg.com with UTM parameters for tracking in Header, ProcessingModeDescription, and SettingsPanel components ([6150d67](https://github.com/neuroradiology/withoutbg/commit/6150d67e8b26a8bb9283d4d163e0af258998e402))
+
+
+### 🐛 Bug Fixes
+
+* Change Content-Disposition header to inline for blob downloads ([fe45fe8](https://github.com/neuroradiology/withoutbg/commit/fe45fe8364c6111c2ea12b9c645ce655d4baabc3))
+
 ## [1.1.0](https://github.com/withoutbg/withoutbg/compare/v1.0.0...v1.1.0) (2025-12-02)
 
 
